@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using TransportJournal.Data;
 using TransportJournal.Models;
 using Route = TransportJournal.Models.Route;
@@ -47,11 +48,18 @@ namespace TransportJournal.Services
         {
             if (!_cache.TryGetValue("Personnel", out IEnumerable<Personnel> personnel))
             {
-                personnel = _context.Personnel.Take(RowCount).ToList();
-                _cache.Set("Personnel", personnel, new MemoryCacheEntryOptions
+                try
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(2 * 28 + 240)
-                });
+                    personnel = _context.Personnel.Take(RowCount).ToList();
+                    _cache.Set("Personnel", personnel, new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(2 * 28 + 240)
+                    });
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Ошибка при получении персонала", ex);
+                }
             }
             return personnel;
         }
