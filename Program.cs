@@ -60,7 +60,7 @@ namespace TransportJournal
                             <title>Главная страница</title>
                             <style>
                                 body { font-family: Arial, sans-serif; background-color: #f0f0f0; text-align: center; }
-                                a { display: block; padding: 10px; margin: 10px; background-color: #007BFF; color: white; text-decoration: none; width: 200px; text-align: center; border-radius: 5px; }
+                                a { display: block; padding: 10px; margin: 10px; background-color: #007BFF; color: white; text-decoration: none; width: 200px; text-align: center; border-radius: 5px; transition: background-color 0.3s; }
                                 a:hover { background-color: #0056b3; }
                             </style>
                         </head>
@@ -83,6 +83,9 @@ namespace TransportJournal
                     <html>
                         <head>
                             <title>Информация</title>
+                            <style>
+                                body { font-family: Arial, sans-serif; background-color: #f0f0f0; text-align: center; }
+                            </style>
                         </head>
                         <body>
                             <h1>Информация</h1>
@@ -104,8 +107,9 @@ namespace TransportJournal
                         <head>
                             <title>Таблицы</title>
                             <style>
-                                body { font-family: Arial, sans-serif; }
-                                a { display: block; margin: 10px 0; }
+                                body { font-family: Arial, sans-serif; background-color: #f0f0f0; text-align: center; }
+                                a { display: block; margin: 10px; padding: 10px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 5px; }
+                                a:hover { background-color: #0056b3; }
                             </style>
                         </head>
                         <body>
@@ -165,12 +169,26 @@ namespace TransportJournal
             async Task RenderTable<T>(HttpContext context, IEnumerable<T> data)
             {
                 context.Response.ContentType = "text/html; charset=utf-8";
-                var html = "<table border='1' style='border-collapse:collapse'>";
+                var html = @"
+                <html>
+                    <head>
+                        <style>
+                            table { width: 80%; margin: 20px auto; border-collapse: collapse; }
+                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            th { background-color: #007BFF; color: white; }
+                            tr:nth-child(even) { background-color: #f2f2f2; }
+                            tr:hover { background-color: #ddd; }
+                            h1 { text-align: center; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>Таблица данных</h1>
+                        <table>
+                            <tr>";
 
                 var type = typeof(T);
 
                 // Генерация заголовков таблицы на основе атрибутов Display
-                html += "<tr>";
                 foreach (var prop in type.GetProperties())
                 {
                     // Пропускаем свойства, которые являются коллекциями или объектами
@@ -219,11 +237,9 @@ namespace TransportJournal
                     html += "</tr>";
                 }
 
-                html += "</table>";
+                html += "</table></body></html>";
                 await context.Response.WriteAsync(html);
             }
-
-
 
             bool IsSimpleType(Type type)
             {
@@ -234,6 +250,7 @@ namespace TransportJournal
                        type == typeof(DateTime) ||
                        type == typeof(decimal);
             }
+
             app.Map("/searchform1", async (HttpContext context) =>
             {
                 context.Response.ContentType = "text/html; charset=utf-8";
@@ -252,28 +269,38 @@ namespace TransportJournal
                                                          .Distinct()
                                                          .ToListAsync();
 
-                    var html = "<form method='post'>";
-                    html += "<label for='RouteName'>Route Name:</label><br/>";
-                    html += $"<input type='text' id='RouteName' name='RouteName' value='{routeName}'><br/><br/>";
+                    var html = @"
+<html>
+<head>
+    <title>Search Routes</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        form { background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        label { display: block; margin: 10px 0 5px; }
+        input[type='text'], select { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #28a745; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <form method='post'>
+        <label for='RouteName'>Название Маршрута:</label>
+        <input type='text' id='RouteName' name='RouteName' value='Маршрут'>
 
-                    html += "<label for='TransportType'>Transport Type:</label><br/>";
-                    html += "<select id='TransportType' name='TransportType'>";
-                    html += "<option value=''>All</option>";  // Значение по умолчанию для 'All'
+        <label for='TransportType'>Тип Транспорта:</label>
+        <select id='TransportType' name='TransportType'>
+            <option value=''>All</option>";
+
                     foreach (var transportTypeItem in transportTypes)
                     {
                         html += $"<option value='{transportTypeItem}' " + (transportType == transportTypeItem ? "selected" : "") + $">{transportTypeItem}</option>";
                     }
-                    html += "</select><br/><br/>";
 
-                    html += "<label for='IsExpress'>Is Express:</label><br/>";
-                    html += "<select id='IsExpress' name='IsExpress'>";
-                    html += "<option value=''>All</option>";  // Значение по умолчанию для 'All'
-                    html += "<option value='true'" + (isExpressValue == "true" ? " selected" : "") + ">Yes</option>"; // Значение для экспресса
-                    html += "<option value='false'" + (isExpressValue == "false" ? " selected" : "") + ">No</option>"; // Значение для неэкспресса
-                    html += "</select><br/><br/>";
+                    html += @"</select><label for='IsExpress'>Экспресс:</label><select id='IsExpress' name='IsExpress'><option value=''>All</option><option value='true'" + (isExpressValue == "true" ? " selected" : "") + ">Yes</option><option value='false'" + (isExpressValue == "false" ? " selected" : "") + ">No</option></select><button type='submit'>Search</button></form></body></html>";
 
-                    html += "<button type='submit'>Search</button>";
-                    html += "</form>";
 
                     await context.Response.WriteAsync(html);
                 }
@@ -310,26 +337,44 @@ namespace TransportJournal
                     // Загружаем данные о маршрутах
                     var routes = await query.ToListAsync();
 
-                    var html = "<h1>Route Search Results (Cockies)</h1>";
-                    html += "<h3>Search Criteria:</h3>";
-                    html += "<table border='1' style='border-collapse:collapse'>";
-                    html += "<tr><th>Route Name</th><th>Transport Type</th><th>Is Express</th></tr>";
+                    var resultHtml = @"
+<html>
+<head>
+    <title>Route Search Results</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .no-results { margin-top: 20px; color: red; }
+    </style>
+</head>
+<body>
+    <h1>Результаты поиска маршрута (Сесия)</h1>
+    <table>
+        <tr><th>Название Маршрута</th><th>Тип Транспорта</th><th>Экспресс</th></tr>";
 
                     // Отображаем данные поиска
                     foreach (var route in routes)
                     {
-                        html += $"<tr><td>{route.Name}</td><td>{route.TransportType}</td><td>{route.IsExpress}</td></tr>";
+                        resultHtml += $"<tr><td>{route.Name}</td><td>{route.TransportType}</td><td>{route.IsExpress}</td></tr>";
                     }
-                    html += "</table>";
+
+                    resultHtml += @"
+    </table>";
 
                     if (routes.Count == 0)
                     {
-                        html += "<p>No routes found matching the search criteria.</p>";
+                        resultHtml += "<p class='no-results'>No routes found matching the search criteria.</p>";
                     }
 
-                    await context.Response.WriteAsync(html);
+                    resultHtml += "</body></html>";
+
+                    await context.Response.WriteAsync(resultHtml);
                 }
             });
+
+
 
 
             app.Map("/searchform2", async (HttpContext context) =>
@@ -350,28 +395,35 @@ namespace TransportJournal
                                                          .Distinct()
                                                          .ToListAsync();
 
-                    var html = "<form method='post'>";
-                    html += "<label for='RouteName'>Route Name:</label><br/>";
-                    html += $"<input type='text' id='RouteName' name='RouteName' value='{routeName}'><br/><br/>";
+                    var html = @"
+<html>
+<head>
+    <title>Search Routes</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        form { background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        label { display: block; margin: 10px 0 5px; }
+        input[type='text'], select { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #28a745; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #218838; }
+    </style>
+</head>
+<body>
+    <form method='post'>
+        <label for='RouteName'>Название Маршрута:</label>
+        <input type='text' id='RouteName' name='RouteName' value='Маршрут'>
 
-                    html += "<label for='TransportType'>Transport Type:</label><br/>";
-                    html += "<select id='TransportType' name='TransportType'>";
-                    html += "<option value=''>All</option>";  // Значение по умолчанию для 'All'
+        <label for='TransportType'>Тип транспорта:</label>
+        <select id='TransportType' name='TransportType'>
+            <option value=''>All</option>";
+
                     foreach (var transportTypeItem in transportTypes)
                     {
                         html += $"<option value='{transportTypeItem}' " + (transportType == transportTypeItem ? "selected" : "") + $">{transportTypeItem}</option>";
                     }
-                    html += "</select><br/><br/>";
 
-                    html += "<label for='IsExpress'>Is Express:</label><br/>";
-                    html += "<select id='IsExpress' name='IsExpress'>";
-                    html += "<option value=''>All</option>";  // Значение по умолчанию для 'All'
-                    html += "<option value='true'" + (isExpressValue == "true" ? " selected" : "") + ">Yes</option>"; // Значение для экспресса
-                    html += "<option value='false'" + (isExpressValue == "false" ? " selected" : "") + ">No</option>"; // Значение для неэкспресса
-                    html += "</select><br/><br/>";
+                    html += "</select><label for='Экспресс'>Is Express:</label><select id='IsExpress' name='IsExpress'><option value=''>All</option><option value='true'" + (isExpressValue == "true" ? " selected" : "") + ">Yes</option><option value='false'" + (isExpressValue == "false" ? " selected" : "") + ">No</option></select><button type='submit'>Search</button></form>";
 
-                    html += "<button type='submit'>Search</button>";
-                    html += "</form>";
 
                     await context.Response.WriteAsync(html);
                 }
@@ -408,26 +460,28 @@ namespace TransportJournal
                     // Загружаем данные о маршрутах
                     var routes = await query.ToListAsync();
 
-                    var html = "<h1>Route Search Results (Sessions)</h1>";
-                    html += "<h3>Search Criteria:</h3>";
-                    html += "<table border='1' style='border-collapse:collapse'>";
-                    html += "<tr><th>Route Name</th><th>Transport Type</th><th>Is Express</th></tr>";
+                    var resultHtml = @"
+<h1>Результаты поиска маршрута (Сесия)</h1>
+<table border='1' style='border-collapse:collapse'>
+    <tr><th>Название Маршрута</th><th>Тип Транспорта</th><th>Экспресс</th></tr>";
 
                     // Отображаем данные поиска
                     foreach (var route in routes)
                     {
-                        html += $"<tr><td>{route.Name}</td><td>{route.TransportType}</td><td>{route.IsExpress}</td></tr>";
+                        resultHtml += $"<tr><td>{route.Name}</td><td>{route.TransportType}</td><td>{route.IsExpress}</td></tr>";
                     }
-                    html += "</table>";
+
+                    resultHtml += @"</table>";
 
                     if (routes.Count == 0)
                     {
-                        html += "<p>No routes found matching the search criteria.</p>";
+                        resultHtml += "<p>No routes found matching the search criteria.</p>";
                     }
 
-                    await context.Response.WriteAsync(html);
+                    await context.Response.WriteAsync(resultHtml);
                 }
             });
+
 
 
 
