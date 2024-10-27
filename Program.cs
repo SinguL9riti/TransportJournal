@@ -1,3 +1,4 @@
+using Route = TransportJournal.Models.Route;
 namespace TransportJournal
 {
     public class Program
